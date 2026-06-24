@@ -1,40 +1,30 @@
-# Ilusion Vault 🔐
+# Ilusion Secrets
 
-**Open-source, zero-knowledge encrypted data vault for storing and sharing passwords, API keys, and files securely.**
+A secret-sharing and personal vault tool built around one principle: the server should never know what you're storing. Everything is encrypted in the browser before it leaves your device, and the decryption key never touches our backend.
 
-Ilusion Vault lets you encrypt sensitive data directly in your browser and store it permanently — or share it via self-destructing links. The server never sees your plaintext. Access your vault from anywhere with just a URL and your encryption key.
-
-🌐 **Live:** [ilusion.io](https://ilusion.io)
+Built with Laravel, Vue 3 (Inertia.js), and Tailwind CSS.
 
 ---
 
-## Why Ilusion Vault?
+## How it works
 
-- **🔐 Encrypted Vault** — Store passwords, API keys, `.env` files, and notes in a persistent encrypted vault accessible from any device.
-- **🔗 Secure Sharing** — Generate self-destructing encrypted links to share credentials safely instead of pasting them in Slack, email, or chat.
-- **🙈 Zero-Knowledge** — The server only stores ciphertext. Your encryption key travels via the URL hash (`#key`), which browsers never send to the server.
-- **🌍 Open Source** — Fully transparent. Audit the code, self-host on your own server, or use our cloud-hosted version at [ilusion.io](https://ilusion.io).
+When you create a secret, Ilusion encrypts your text or files directly in the browser using AES-GCM 256-bit encryption. The resulting ciphertext is sent to the server — the key is not. Instead, the key travels as a URL hash fragment (the part after `#`), which browsers never include in HTTP requests. Only someone with the full link can decrypt the secret.
+
+---
 
 ## Features
 
-- 🔒 **End-to-End Encryption** — AES-GCM (256-bit) client-side encryption via the Web Crypto API. Plaintext never leaves your browser.
-- 📁 **Encrypted File Uploads** — Attach multiple files. Each file is encrypted in-browser before upload to S3/Cloudflare R2.
-- ⏱ **Auto-Burn & Expiry** — Set data to self-destruct after one view, or expire after 1 Hour, 1 Day, 1 Week — or store permanently.
-- 📧 **Recipient Notifications** — Notify multiple recipients via email when you share encrypted data (Pro).
-- 💡 **Encryption Hints** — Add a hint to help the recipient remember the decryption key without exposing it (Pro).
-- 🔑 **Two-Factor Authentication** — Secure your account with 2FA and WebAuthn Passkeys.
-- 📱 **QR Code Sharing** — Every encrypted link comes with a QR code for easy mobile access.
+**End-to-end encryption** — Secrets are encrypted and decrypted entirely client-side. The server stores only ciphertext it cannot read.
 
-## Tech Stack
+**Secure file attachments** — Attach multiple files to any secret. Each file is encrypted before upload and stored on S3-compatible storage (Cloudflare R2 or equivalent).
 
-| Layer | Technology |
-|---|---|
-| Backend | Laravel 11, PHP 8.3+ |
-| Frontend | Vue 3 (Composition API), Inertia.js |
-| Styling | Tailwind CSS v4 |
-| Auth | Laravel Fortify, WebAuthn (Passkeys), 2FA |
-| Storage | S3-compatible (Cloudflare R2) |
-| Payments | Dodo Payments |
+**Burn after reading** — Set a secret to self-destruct after the first view, or after a fixed window: one hour, one day, one week, or never (for permanent vaulting).
+
+**Email delivery** — Share secrets with multiple recipients by email. They receive a notification with the secure link.
+
+**Two-factor authentication** — Vault owners can protect their accounts with TOTP-based 2FA.
+
+---
 
 ## Requirements
 
@@ -42,15 +32,17 @@ Ilusion Vault lets you encrypt sensitive data directly in your browser and store
 - Composer
 - Node.js v18 or later with NPM
 - SQLite, MySQL, or PostgreSQL
-- An S3-compatible storage provider (e.g., Cloudflare R2) for encrypted file uploads
+- An S3-compatible storage provider (Cloudflare R2 recommended)
 
-## Quick Start
+---
+
+## Setup
 
 **1. Clone the repository**
 
 ```bash
-git clone https://github.com/ilusion-io/ilusion-vault.git
-cd ilusion-vault
+git clone https://github.com/ilusion-io/ilusion-secrets.git
+cd ilusion-secrets
 ```
 
 **2. Install dependencies**
@@ -60,7 +52,7 @@ composer install
 npm install
 ```
 
-**3. Configure environment**
+**3. Configure the environment**
 
 ```bash
 cp .env.example .env
@@ -91,8 +83,9 @@ php artisan migrate
 
 ```bash
 npm run build
-# For local development, use `npm run dev` to start the Vite dev server with hot reload.
 ```
+
+For local development, use `npm run dev` to start the Vite dev server with hot reload.
 
 **7. Start the server**
 
@@ -100,31 +93,12 @@ npm run build
 php artisan serve
 ```
 
-## How It Works
-
-```
-┌─────────────┐     Encrypted Data      ┌─────────────┐
-│   Browser    │ ──────────────────────► │   Server    │
-│ (Encrypts)   │                         │ (Stores     │
-│              │     URL + #Key          │  Ciphertext)│
-│              │ ◄────────────────────── │             │
-└─────────────┘                          └─────────────┘
-```
-
-1. You enter your data and an encryption key in the browser.
-2. The browser encrypts everything locally using AES-256-GCM.
-3. Only the **ciphertext** is sent to the server.
-4. You receive a URL with the decryption key in the hash fragment (`#key`).
-5. The hash fragment is **never** transmitted to the server — it stays client-side.
-
-## Managed Hosting
-
-Don't want to self-host? Use our cloud-hosted version at **[ilusion.io](https://ilusion.io)** — or [contact us](https://ilusion.io/contact) if you need help deploying Ilusion Vault on your own infrastructure.
+---
 
 ## Contributing
 
-Contributions, issues, and feature requests are welcome! Feel free to check the [issues page](https://github.com/ilusion-io/ilusion-vault/issues).
+Issues and pull requests are welcome. If you have a feature idea or run into a bug, open an issue first so we can discuss it before you spend time on a PR.
 
 ## License
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+MIT — see [LICENSE](LICENSE) for details.
