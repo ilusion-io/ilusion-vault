@@ -38,38 +38,38 @@ Ilusion Vault lets you encrypt sensitive data directly in your browser and store
 
 ## Requirements
 
-- PHP 8.2+
+- PHP 8.2 or later
 - Composer
-- Node.js (v18+) & NPM
+- Node.js v18 or later with NPM
 - SQLite, MySQL, or PostgreSQL
 - An S3-compatible storage provider (e.g., Cloudflare R2) for encrypted file uploads
 
 ## Quick Start
 
+**1. Clone the repository**
+
 ```bash
-# 1. Clone the repository
 git clone https://github.com/ilusion-io/ilusion-vault.git
 cd ilusion-vault
-
-# 2. Install dependencies
-composer install
-npm install
-
-# 3. Configure environment
-cp .env.example .env
-php artisan key:generate
-
-# 4. Run migrations
-php artisan migrate
-
-# 5. Build frontend & start server
-npm run build
-php artisan serve
 ```
 
-### Configure Encrypted File Storage (Cloudflare R2 / S3)
+**2. Install dependencies**
 
-Add the following to your `.env` file:
+```bash
+composer install
+npm install
+```
+
+**3. Configure environment**
+
+```bash
+cp .env.example .env
+php artisan key:generate
+```
+
+**4. Configure storage**
+
+Open `.env` and add your S3 / Cloudflare R2 credentials:
 
 ```env
 FILESYSTEM_DISK=r2
@@ -79,6 +79,25 @@ R2_SECRET_ACCESS_KEY="your_secret_key"
 R2_BUCKET_NAME="your_bucket"
 R2_URL="https://your-custom-domain.com"
 R2_ENDPOINT="https://<ACCOUNT_ID>.r2.cloudflarestorage.com"
+```
+
+**5. Run migrations**
+
+```bash
+php artisan migrate
+```
+
+**6. Build the frontend**
+
+```bash
+npm run build
+# For local development, use `npm run dev` to start the Vite dev server with hot reload.
+```
+
+**7. Start the server**
+
+```bash
+php artisan serve
 ```
 
 ## How It Works
