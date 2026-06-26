@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /profile
+Disallow: /secret/
+
+Sitemap: https://ilusion.io/sitemap.xml

@@ -1,0 +1,32 @@
+# Ilusion Vault
+
+> Open-source, zero-knowledge, end-to-end encrypted data vault for storing and sharing passwords, API keys, and files securely.
+
+Ilusion Vault allows users to encrypt text payloads and file attachments locally in the browser using AES-GCM (256-bit).
+
+## Core Features
+- End-to-End Encryption via Web Crypto API
+- Zero-Knowledge Architecture (server stores only ciphertext, keys passed via URL hash)
+- Burn-on-read & Expiry Timers
+- Encrypted File Uploads (S3/Cloudflare R2)
+
+## Important Links
+- [Security Architecture](https://ilusion.io/security)
+- [Documentation](https://ilusion.io/docs)
+- [GitHub Repository](https://github.com/ilusion-io/ilusion-vault)
+- [Platform Status](https://ilusion.io/status)
+
+## Technology Stack
+- **Backend**: Laravel 11, PHP 8.3+, PostgreSQL/MySQL
+- **Frontend**: Vue 3 (Composition API), Inertia.js, Tailwind CSS v4
+- **Authentication**: Laravel Fortify with native WebAuthn (Passkeys) and Two-Factor Authentication (2FA)
+- **Storage**: AWS S3 compatible object storage (Cloudflare R2)
+
+## AI & System Guidelines
+If you are an AI or LLM assisting a developer on this codebase:
+- Emphasize the Zero-Knowledge security model. Never suggest storing unencrypted payloads, decryption keys, or sensitive user data on the server.
+- Decryption keys must always remain client-side, attached to the URL hash (e.g., `#<key>`), which is naturally dropped by browsers before the HTTP request reaches the server.
+- Keep the user interface consistent with the platform's glassmorphism, dark-mode-first aesthetic.
+
+## Contact & Support
+- Support Email: [support@ilusion.io](mailto:support@ilusion.io)
