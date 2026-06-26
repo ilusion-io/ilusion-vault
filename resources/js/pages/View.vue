@@ -149,7 +149,10 @@ return;
         const payloadFile = fetchedSecretPayload.value.file_paths[index];
         
         const response = await axios.get(payloadFile.download_url, {
-            responseType: 'arraybuffer'
+            responseType: 'arraybuffer',
+            headers: {
+                'X-Vault-Decrypted': '1'
+            }
         });
         
         const { decryptedFile } = await decryptFile(
@@ -255,10 +258,6 @@ onMounted(() => {
                     <template v-if="$page.props.auth?.user">
                         <span class="font-body-md text-body-md text-vault-on-surface-variant select-none hidden sm:flex items-center mr-2 gap-1.5">
                             Hello <span class="font-semibold text-vault-on-surface">{{ $page.props.auth.user.name }}</span>
-                            <span v-if="$page.props.auth?.is_pro" class="bg-vault-primary/10 text-vault-primary text-[0.625rem] px-1.5 py-0.5 rounded-sm font-bold tracking-wider select-none uppercase align-middle">PRO</span>
-                            <span v-if="$page.props.auth?.is_pro && $page.props.auth.user.plan_expires_at" class="text-[0.6875rem] text-vault-on-surface-variant/70 italic select-none">
-                                (expires {{ formatExpiryDate($page.props.auth.user.plan_expires_at) }})
-                            </span>
                         </span>
                         <Link
                             :href="profile()"

@@ -94,6 +94,21 @@ use App\Http\Controllers\SecretController;
 Route::post('/api/secrets', [SecretController::class, 'store'])
     ->middleware('throttle:secrets.create')
     ->name('secrets.store');
+Route::post('/api/secrets/check', function (Request $request) {
+    $request->validate([
+        'ids' => 'required|array',
+        'ids.*' => 'string',
+    ]);
+
+    $existingIds = \App\Models\Secret::whereIn('secret_id', $request->ids)
+        ->where('expiry_date', '>', now())
+        ->pluck('secret_id')
+        ->toArray();
+
+    return response()->json([
+        'existing' => $existingIds
+    ]);
+})->name('secrets.check');
 Route::get('/api/secrets/{secretId}', [SecretController::class, 'show'])
     ->middleware('throttle:secrets.view')
     ->name('secrets.show');

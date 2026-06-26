@@ -5,7 +5,6 @@ import { ref, computed } from 'vue';
 
 const page = usePage();
 const user = computed(() => page.props.auth?.user);
-const isPro = computed(() => page.props.auth?.is_pro);
 
 const name = ref('');
 const email = ref('');

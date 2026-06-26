@@ -106,6 +106,22 @@ onMounted(() => {
             scrambleComplete.value = true;
         }
     }, 30);
+
+    // Filter guest secrets that have expired locally
+    guestSecrets.value = guestSecrets.value.filter(s => new Date(s.expiry_date) > new Date());
+
+    // Verify remaining guest secrets against the server to check if they were burned/deleted
+    if (guestSecrets.value.length > 0) {
+        const ids = guestSecrets.value.map(s => s.secret_id);
+        axios.post('/api/secrets/check', { ids })
+            .then(res => {
+                const existing = res.data.existing || [];
+                guestSecrets.value = guestSecrets.value.filter(s => existing.includes(s.secret_id));
+            })
+            .catch(err => {
+                console.error('Failed to verify guest secrets:', err);
+            });
+    }
 });
 
 function formatExpiryDate(dateStr?: string) {

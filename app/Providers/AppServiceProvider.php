@@ -28,14 +28,40 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
 
-        // Rate limiter for creating secrets: 10 per minute per IP/User
+        // Rate limiter for creating secrets:
         RateLimiter::for('secrets.create', function (Request $request) {
-            return Limit::perMinute(10)->by($request->user()?->id ?: $request->ip());
+            $user = $request->user();
+            if ($user) {
+                $limitKey = 'user:' . $user->id;
+                return [
+                    Limit::perMinute(20)->by($limitKey),
+                    Limit::perHour(200)->by($limitKey),
+                ];
+            }
+            
+            $limitKey = 'guest:' . $request->ip();
+            return [
+                Limit::perMinute(5)->by($limitKey),
+                Limit::perHour(50)->by($limitKey),
+            ];
         });
 
-        // Rate limiter for viewing secrets: 30 per minute per IP/User
+        // Rate limiter for viewing secrets:
         RateLimiter::for('secrets.view', function (Request $request) {
-            return Limit::perMinute(30)->by($request->user()?->id ?: $request->ip());
+            $user = $request->user();
+            if ($user) {
+                $limitKey = 'user:' . $user->id;
+                return [
+                    Limit::perMinute(60)->by($limitKey),
+                    Limit::perHour(600)->by($limitKey),
+                ];
+            }
+
+            $limitKey = 'guest:' . $request->ip();
+            return [
+                Limit::perMinute(15)->by($limitKey),
+                Limit::perHour(150)->by($limitKey),
+            ];
         });
 
         \Illuminate\Auth\Notifications\VerifyEmail::toMailUsing(function (object $notifiable, string $url) {

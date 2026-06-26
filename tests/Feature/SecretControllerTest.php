@@ -11,6 +11,7 @@ beforeEach(function () {
 });
 
 test('can create a secret with encrypted metadata and files', function () {
+    $user = User::factory()->create();
     $file1 = UploadedFile::fake()->create('document.pdf', 100);
     $file2 = UploadedFile::fake()->create('photo.jpg', 200);
 
@@ -27,7 +28,7 @@ test('can create a secret with encrypted metadata and files', function () {
         ],
     ];
 
-    $response = $this->postJson(route('secrets.store'), [
+    $response = $this->actingAs($user)->postJson(route('secrets.store'), [
         'payload' => 'encrypted_text_payload_base64',
         'expiry' => '1 Day',
         'burn_on_read' => true,
@@ -110,7 +111,9 @@ test('downloading file via signed route streams the file and deletes it if burn 
     );
 
     // Request the download
-    $response = $this->get($signedUrl);
+    $response = $this->get($signedUrl, [
+        'X-Vault-Decrypted' => '1'
+    ]);
 
     $response->assertOk();
     $response->assertHeader('Content-Disposition', 'attachment; filename="' . basename($path) . '"');
@@ -120,6 +123,23 @@ test('downloading file via signed route streams the file and deletes it if burn 
 
     // File should be deleted from storage due to burn parameter
     Storage::disk('r2')->assertMissing($path);
+});
+
+test('cannot download file directly without decrypted app header', function () {
+    $file = UploadedFile::fake()->create('notes.txt', 50);
+    $path = $file->store('secrets', 'r2');
+
+    $signedUrl = URL::temporarySignedRoute(
+        'secrets.file.download',
+        now()->addMinutes(15),
+        [
+            'path' => $path,
+            'burn' => '1',
+        ]
+    );
+
+    $response = $this->get($signedUrl);
+    $response->assertStatus(403);
 });
 
 test('expired secrets delete R2 files and return 404', function () {
@@ -169,27 +189,44 @@ test('logged in user can create a secret with Never expiry', function () {
     expect($secret->expiry_date->year)->toBeGreaterThan(now()->year + 99);
 });
 
-test('guest user cannot create a secret with Never expiry and falls back to 7 days', function () {
+test('guest user cannot create a secret with more than 1 day expiry', function () {
     $response = $this->postJson(route('secrets.store'), [
         'payload' => 'encrypted_text_payload_base64',
-        'expiry' => 'Never',
+        'expiry' => '7 Days',
         'burn_on_read' => false,
     ]);
 
-    $response->assertOk();
-    $secretId = $response->json('secret_id');
-    $secret = Secret::where('secret_id', $secretId)->first();
+    $response->assertStatus(422);
+    $response->assertJsonValidationErrors('expiry');
+});
 
-    expect($secret)->not->toBeNull();
-    // Guest expiry should be 7 days from now (not 100 years)
-    expect($secret->expiry_date->year)->toBe(now()->year);
-    expect($secret->expiry_date->day)->toBe(now()->addDays(7)->day);
+test('guest user cannot create a secret with file attachments', function () {
+    $file = UploadedFile::fake()->create('document.pdf', 100);
+    $metadata = [
+        [
+            'encrypted_metadata' => 'meta',
+            'salt' => 'salt',
+            'iv' => 'iv',
+        ],
+    ];
+
+    $response = $this->postJson(route('secrets.store'), [
+        'payload' => 'encrypted_text_payload_base64',
+        'expiry' => '1 Day',
+        'burn_on_read' => false,
+        'files' => [$file],
+        'file_metadata' => json_encode($metadata),
+    ]);
+
+    $response->assertStatus(422);
+    $response->assertJsonValidationErrors('files');
 });
 
 test('can validate and queue emails to multiple recipients', function () {
     \Illuminate\Support\Facades\Mail::fake();
+    $user = User::factory()->create();
 
-    $response = $this->postJson(route('secrets.store'), [
+    $response = $this->actingAs($user)->postJson(route('secrets.store'), [
         'payload' => 'encrypted_text_payload_base64',
         'expiry' => '1 Day',
         'burn_on_read' => false,
@@ -206,7 +243,8 @@ test('can validate and queue emails to multiple recipients', function () {
 });
 
 test('fails validation for invalid emails in comma separated list', function () {
-    $response = $this->postJson(route('secrets.store'), [
+    $user = User::factory()->create();
+    $response = $this->actingAs($user)->postJson(route('secrets.store'), [
         'payload' => 'encrypted_text_payload_base64',
         'expiry' => '1 Day',
         'burn_on_read' => false,
@@ -290,4 +328,29 @@ test('anyone can delete a guest secret', function () {
 
     expect(Secret::where('secret_id', 'guest_secret')->exists())->toBeFalse();
     Storage::disk('r2')->assertMissing($path);
+});
+
+test('can check status of secrets', function () {
+    $activeSecret = Secret::create([
+        'secret_id' => 'active_id',
+        'encrypted_payload' => 'payload',
+        'expiry_date' => now()->addHour(),
+        'burn_on_read' => false,
+    ]);
+
+    $expiredSecret = Secret::create([
+        'secret_id' => 'expired_id',
+        'encrypted_payload' => 'payload',
+        'expiry_date' => now()->subHour(),
+        'burn_on_read' => false,
+    ]);
+
+    $response = $this->postJson(route('secrets.check'), [
+        'ids' => ['active_id', 'expired_id', 'non_existent_id']
+    ]);
+
+    $response->assertOk();
+    $response->assertExactJson([
+        'existing' => ['active_id']
+    ]);
 });

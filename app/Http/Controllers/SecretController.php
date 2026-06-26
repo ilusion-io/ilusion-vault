@@ -14,13 +14,22 @@ class SecretController extends Controller
 {
     public function store(Request $request)
     {
+        $user = auth()->guard('sanctum')->user() ?? auth()->user();
+
         $request->validate([
             'payload' => 'required|string',
-            'expiry' => 'required|string',
+            'expiry' => ['required', 'string', function ($attribute, $value, $fail) use ($user) {
+                if (!$user && !in_array($value, ['1 Day', '1 Hour'])) {
+                    $fail("Guest users can only set an expiry of 1 day or less.");
+                }
+            }],
             'burn_on_read' => 'boolean',
             'identifier' => 'nullable|string|max:255',
             'custom_address' => 'nullable|string|unique:secrets,secret_id',
-            'recipient_email' => ['nullable', 'string', function ($attribute, $value, $fail) {
+            'recipient_email' => ['nullable', 'string', function ($attribute, $value, $fail) use ($user) {
+                if (!$user && !empty($value)) {
+                    $fail("Guest users are not allowed to send notifications to recipient emails.");
+                }
                 $emails = array_filter(array_map('trim', explode(',', $value)));
                 foreach ($emails as $email) {
                     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -29,6 +38,11 @@ class SecretController extends Controller
                 }
             }],
             'encryption_hint' => 'nullable|string',
+            'files' => ['nullable', 'array', function ($attribute, $value, $fail) use ($user) {
+                if (!$user && !empty($value)) {
+                    $fail("Guest users are not allowed to attach files.");
+                }
+            }],
             'files.*' => 'nullable|file',
             'file_metadata' => 'nullable|string',
         ]);
@@ -87,8 +101,6 @@ class SecretController extends Controller
                 ];
             }
         }
-
-        $user = auth()->guard('sanctum')->user() ?? auth()->user();
 
         $secret = Secret::create([
             'secret_id' => $secretId,
@@ -198,6 +210,10 @@ class SecretController extends Controller
 
     public function downloadFile(Request $request)
     {
+        if (!$request->hasHeader('X-Vault-Decrypted')) {
+            abort(403, 'Direct access to file downloads is not allowed. Files must be decrypted and requested through the application.');
+        }
+
         $path = $request->input('path');
         $burn = $request->input('burn');
 

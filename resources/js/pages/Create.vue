@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { Head, Link, usePage } from '@inertiajs/vue3';
+import { Head, Link, usePage, router } from '@inertiajs/vue3';
 import axios from 'axios';
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useStorage } from '@vueuse/core';
 import { toast } from 'vue-sonner';
 import { Toaster } from '@/components/ui/sonner';
@@ -36,7 +36,45 @@ const isGuestLimitReached = computed(() => {
 });
 
 const payload = ref('');
-const expiry = ref('7 Days');
+const expiry = ref(usePage().props.auth?.user ? '7 Days' : '1 Day');
+
+async function handleExpiryChange(e: Event) {
+    const target = e.target as HTMLSelectElement;
+    const newVal = target.value;
+    const isLogged = !!usePage().props.auth?.user;
+    
+    if (!isLogged && ['15 Days', '7 Days', 'Never', 'No Expiry'].includes(newVal)) {
+        target.value = expiry.value;
+        const isConfirmed = await confirm({
+            title: 'Login Required',
+            message: 'Guest users can only set an expiry of 1 day or less. Please sign in to choose a longer duration.',
+            confirmText: 'Sign In',
+            cancelText: 'Cancel',
+            type: 'info'
+        });
+        if (isConfirmed) {
+            router.visit(login());
+        }
+    } else {
+        expiry.value = newVal;
+    }
+}
+
+async function handleRecipientEmailClick() {
+    if (!usePage().props.auth?.user) {
+        const isConfirmed = await confirm({
+            title: 'Login Required',
+            message: 'You must be signed in to send secrets directly to recipient emails.',
+            confirmText: 'Sign In',
+            cancelText: 'Cancel',
+            type: 'info'
+        });
+        if (isConfirmed) {
+            router.visit(login());
+        }
+    }
+}
+
 const password = ref('');
 const identifier = ref('');
 const customAddress = ref('');
@@ -267,11 +305,25 @@ function handleCreateAnother() {
     createdSecretId.value = '';
 }
 
-function triggerFileInput() {
+async function triggerFileInput() {
+    if (!usePage().props.auth?.user) {
+        const isConfirmed = await confirm({
+            title: 'Login Required',
+            message: 'You must be signed in to add file attachments to your secrets.',
+            confirmText: 'Sign In',
+            cancelText: 'Cancel',
+            type: 'info'
+        });
+        if (isConfirmed) {
+            router.visit(login());
+        }
+        return;
+    }
     fileInputRef.value?.click();
 }
 
 function handleFileSelect(e: Event) {
+    if (!usePage().props.auth?.user) return;
     const target = e.target as HTMLInputElement;
 
     if (target.files) {
@@ -279,8 +331,22 @@ function handleFileSelect(e: Event) {
     }
 }
 
-function handleFileDrop(e: DragEvent) {
+async function handleFileDrop(e: DragEvent) {
     dragOver.value = false;
+
+    if (!usePage().props.auth?.user) {
+        const isConfirmed = await confirm({
+            title: 'Login Required',
+            message: 'You must be signed in to add file attachments to your secrets.',
+            confirmText: 'Sign In',
+            cancelText: 'Cancel',
+            type: 'info'
+        });
+        if (isConfirmed) {
+            router.visit(login());
+        }
+        return;
+    }
 
     if (e.dataTransfer?.files) {
         addFiles(e.dataTransfer.files);
@@ -359,10 +425,6 @@ return '';
                     <template v-if="$page.props.auth?.user">
                         <span class="font-body-md text-body-md text-vault-on-surface-variant select-none hidden sm:flex items-center mr-2 gap-1.5">
                             Hello <span class="font-semibold text-vault-on-surface">{{ $page.props.auth.user.name }}</span>
-                            <span v-if="$page.props.auth?.is_pro" class="bg-vault-primary/10 text-vault-primary text-[0.625rem] px-1.5 py-0.5 rounded-sm font-bold tracking-wider select-none uppercase align-middle">PRO</span>
-                            <span v-if="$page.props.auth?.is_pro && $page.props.auth.user.plan_expires_at" class="text-[0.6875rem] text-vault-on-surface-variant/70 italic select-none">
-                                (expires {{ formatExpiryDate($page.props.auth.user.plan_expires_at) }})
-                            </span>
                         </span>
                         <Link
                             :href="profile()"
@@ -477,13 +539,15 @@ return '';
                             <label class="font-label-sm text-label-sm uppercase text-vault-secondary select-none" for="expiry">Expiry</label>
                             <div class="relative">
                                 <select
-                                    v-model="expiry"
+                                    :value="expiry"
+                                    @change="handleExpiryChange($event)"
                                     id="expiry"
                                     @focus="activeFocus = 'expiry'"
                                     @blur="activeFocus = null"
                                     class="w-full appearance-none bg-vault-surface-container-lowest border border-vault-outline-variant rounded py-3 pl-4 pr-10 font-body-md text-body-md text-vault-on-surface focus:outline-none focus:border-vault-primary focus:ring-1 focus:ring-vault-primary transition-all"
                                 >
-                                    <option v-if="$page.props.auth?.user">Never</option>
+                                    <option>No Expiry</option>
+                                    <option>Never</option>
                                     <option>15 Days</option>
                                     <option>7 Days</option>
                                     <option>1 Day</option>
@@ -550,14 +614,17 @@ return '';
  
                     <!-- File Attachment Section -->
                     <div class="pt-3 border-t border-vault-outline-variant flex flex-col gap-2">
-                        <label class="font-label-sm text-label-sm uppercase text-vault-secondary select-none">Attachments (Optional)</label>
+                        <div class="flex items-center justify-between">
+                            <label class="font-label-sm text-label-sm uppercase text-vault-secondary select-none">Attachments (Optional)</label>
+                            <span v-if="!$page.props.auth?.user" class="text-[0.625rem] text-vault-primary font-bold uppercase tracking-wider">Login Required</span>
+                        </div>
                         <div 
                             class="border border-dashed border-vault-outline-variant rounded-lg p-3 flex flex-col items-center justify-center bg-vault-surface-container-lowest hover:bg-vault-surface-container-low/30 hover:border-vault-primary/50 transition-all cursor-pointer select-none"
                             @click="triggerFileInput"
-                            @dragover.prevent="dragOver = true"
+                            @dragover.prevent="!$page.props.auth?.user ? null : dragOver = true"
                             @dragleave.prevent="dragOver = false"
                             @drop.prevent="handleFileDrop"
-                            :class="{ 'border-vault-primary bg-vault-primary/5': dragOver }"
+                            :class="{ 'border-vault-primary bg-vault-primary/5': dragOver, 'opacity-60': !$page.props.auth?.user }"
                         >
                             <input 
                                 type="file" 
@@ -568,7 +635,8 @@ return '';
                             />
                             <div class="flex items-center gap-2 text-vault-outline hover:text-vault-primary transition-colors">
                                 <span class="material-symbols-outlined text-[1.25rem]">attach_file</span>
-                                <span class="font-body-md text-body-md text-vault-secondary">Drag & drop files here, or <span class="text-vault-primary font-medium">browse</span></span>
+                                <span v-if="!$page.props.auth?.user" class="font-body-md text-body-md text-vault-secondary">Sign in to add file attachments</span>
+                                <span v-else class="font-body-md text-body-md text-vault-secondary">Drag & drop files here, or <span class="text-vault-primary font-medium">browse</span></span>
                             </div>
                             <p class="font-label-sm text-[0.625rem] text-vault-secondary/70 mt-1">Maximum size: 100MB per file</p>
                         </div>
@@ -599,17 +667,27 @@ return '';
 
                     <!-- Advanced Options Section -->
                     <div v-show="showAdvanced" class="pt-4 mt-2 border-t border-vault-outline-variant grid grid-cols-1 md:grid-cols-2 gap-5 animate-[fadeIn_0.2s_ease-out]">
-                        <div class="flex flex-col gap-2">
+                        <div class="flex flex-col gap-2 relative">
                             <div class="flex items-center justify-between">
                                 <label class="font-label-sm text-label-sm uppercase text-vault-secondary select-none" for="recipient-email">Recipient Email(s) (Optional)</label>
+                                <span v-if="!$page.props.auth?.user" class="text-[0.625rem] text-vault-primary font-bold uppercase tracking-wider">Login Required</span>
                             </div>
-                            <input
-                                v-model="recipientEmail"
-                                type="text"
-                                id="recipient-email"
-                                class="w-full border border-vault-outline-variant rounded py-3 px-4 font-body-md text-body-md text-vault-on-surface focus:outline-none focus:border-vault-primary focus:ring-1 transition-all placeholder:text-vault-outline bg-vault-surface-container-lowest focus:ring-vault-primary"
-                                placeholder="e.g. user1@example.com, user2@example.com"
-                            />
+                            <div class="relative w-full">
+                                <input
+                                    v-model="recipientEmail"
+                                    type="text"
+                                    id="recipient-email"
+                                    :disabled="!$page.props.auth?.user"
+                                    class="w-full border border-vault-outline-variant rounded py-3 px-4 font-body-md text-body-md text-vault-on-surface focus:outline-none focus:border-vault-primary focus:ring-1 transition-all placeholder:text-vault-outline bg-vault-surface-container-lowest focus:ring-vault-primary disabled:opacity-50"
+                                    :placeholder="!$page.props.auth?.user ? 'Sign in to notify recipients via email' : 'e.g. user1@example.com, user2@example.com'"
+                                />
+                                <div
+                                    v-if="!$page.props.auth?.user"
+                                    @click="handleRecipientEmailClick"
+                                    class="absolute inset-0 cursor-pointer z-10"
+                                    title="Sign in to use this feature"
+                                ></div>
+                            </div>
                         </div>
                         <div class="flex flex-col gap-2">
                             <div class="flex items-center justify-between">

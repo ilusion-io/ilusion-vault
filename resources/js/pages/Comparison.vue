@@ -8,7 +8,6 @@ const props = defineProps<{
 
 const page = usePage();
 const user = computed(() => page.props.auth?.user);
-const isPro = computed(() => page.props.auth?.is_pro);
 
 interface CompetitorData {
   name: string;
@@ -126,7 +125,6 @@ const data = computed<CompetitorData>(() => {
           Ilusion
         </Link>
         <div class="flex items-center gap-3">
-          <Link v-if="!isPro" href="/pricing" class="font-label-md text-label-md text-vault-on-surface hover:text-vault-primary transition-colors duration-200 mr-2 uppercase tracking-widest hidden sm:inline-block border-b-2 border-transparent hover:border-vault-primary">Pricing</Link>
           <Link href="/contact" class="font-label-md text-label-md text-vault-on-surface hover:text-vault-primary transition-colors duration-200 mr-2 uppercase tracking-widest hidden sm:inline-block border-b-2 border-transparent hover:border-vault-primary">Contact</Link>
           <template v-if="user">
             <Link href="/profile" class="bg-vault-surface-container-lowest border border-vault-outline-variant text-vault-on-surface font-label-md text-label-md py-2 px-4 rounded hover:bg-vault-surface-container-low transition-colors duration-200">Dashboard</Link>

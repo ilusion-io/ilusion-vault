@@ -44,11 +44,4 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
         ];
     }
 
-    /**
-     * Check if this user has an active Pro plan.
-     */
-    public function isPro(): bool
-    {
-        return true;
-    }
 }
