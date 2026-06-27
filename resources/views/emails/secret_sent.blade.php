@@ -9,11 +9,6 @@ To maintain zero-knowledge security, the contents of this secret are encrypted c
 Retrieve Secret
 </x-mail::button>
 
-@if(!empty($encryptionHint))
-### 🔐 Decryption Hint
-The sender provided the following hint for the decryption key:
-> **{{ $encryptionHint }}**
-@endif
 
 ---
 

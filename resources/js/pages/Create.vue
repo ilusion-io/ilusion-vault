@@ -217,7 +217,8 @@ async function handleCreateSecret() {
         }
 
         if (encryptionHint.value) {
-            formData.append('encryption_hint', encryptionHint.value);
+            const encryptedHint = await encryptText(encryptionHint.value, encKey);
+            formData.append('encryption_hint', encryptedHint);
         }
         
         const fileMetadataArray: any[] = [];
