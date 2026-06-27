@@ -12,6 +12,8 @@ import {
     encryptFile,
 } from '@/lib/crypto';
 import { profile, login, home, logout } from '@/routes';
+import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 
 const { confirm } = useConfirm();
 
@@ -134,27 +136,15 @@ const compiledMarkdown = computed(() => {
         return '<p class="text-vault-outline/70 italic select-none">No content to preview yet. Start typing in the "Write" tab...</p>';
     }
 
-    let html = payload.value
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
+    const rawHtml = marked.parse(payload.value, { async: false }) as string;
+    
+    // Configure DOMPurify to be extremely strict but allow basic formatting
+    const cleanHtml = DOMPurify.sanitize(rawHtml, {
+        ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'strong', 'em', 'u', 'br', 'ul', 'ol', 'li', 'code', 'pre', 'blockquote', 'a'],
+        ALLOWED_ATTR: ['href', 'target', 'rel']
+    });
 
-    html = html.replace(/^### (.*$)/gim, '<h3 class="text-base font-bold mt-4 mb-2 text-vault-on-surface">$1</h3>');
-    html = html.replace(/^## (.*$)/gim, '<h2 class="text-lg font-bold mt-5 mb-2 text-vault-on-surface">$1</h2>');
-    html = html.replace(/^# (.*$)/gim, '<h1 class="text-xl font-bold mt-6 mb-3 text-vault-on-surface border-b border-vault-outline-variant/30 pb-1">$1</h1>');
-
-    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
-
-    html = html.replace(/```([\s\S]*?)```/g, '<pre class="bg-vault-surface-container border border-vault-outline-variant/60 rounded p-3 my-3 font-mono text-xs overflow-x-auto select-text">$1</pre>');
-    html = html.replace(/`([^`]+)`/g, '<code class="bg-vault-surface-container px-1.5 py-0.5 rounded font-mono text-xs text-vault-primary">$1</code>');
-
-    html = html.replace(/^\s*-\s+(.*$)/gim, '<li class="ml-4 list-disc text-vault-on-surface-variant">$1</li>');
-    html = html.replace(/^\s*\*\s+(.*$)/gim, '<li class="ml-4 list-disc text-vault-on-surface-variant">$1</li>');
-
-    html = html.replace(/\n/gim, '<br />');
-
-    return html;
+    return cleanHtml;
 });
 
 function insertMarkdown(syntax: string, placeholder = '') {
