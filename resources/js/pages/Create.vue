@@ -76,6 +76,24 @@ async function handleRecipientEmailClick() {
 }
 
 const password = ref('');
+const showPassword = ref(false);
+const showCreatedKey = ref(false);
+const copiedKey = ref(false);
+
+function generateRandomPassword() {
+    password.value = generateRandomKey(16);
+    showPassword.value = true;
+}
+
+function handleCopyKey() {
+    navigator.clipboard.writeText(password.value);
+    copiedKey.value = true;
+    toast.success('Decryption key copied to clipboard.');
+    setTimeout(() => {
+        copiedKey.value = false;
+    }, 2000);
+}
+
 const identifier = ref('');
 const customAddress = ref('');
 const showAdvanced = ref(false);
@@ -166,40 +184,41 @@ const isSubmitting = ref(false);
 
 async function handleCreateSecret() {
     if (!payload.value.trim() && attachedFiles.value.length === 0) {
-return;
-}
+        return;
+    }
+
+    if (!password.value.trim()) {
+        toast.error('Please enter or generate a decryption key.');
+        return;
+    }
 
     isSubmitting.value = true;
 
     try {
-        const encKey = password.value || generateRandomKey();
+        const encKey = password.value;
         const encryptedTextJson = await encryptText(payload.value, encKey);
 
         const formData = new FormData();
         formData.append('payload', encryptedTextJson);
         formData.append('expiry', expiry.value);
 
-        if (password.value) {
-formData.append('password', password.value);
-}
-
         if (customAddress.value) {
-formData.append('custom_address', customAddress.value);
-}
+            formData.append('custom_address', customAddress.value);
+        }
 
         if (identifier.value) {
-formData.append('identifier', identifier.value);
-}
+            formData.append('identifier', identifier.value);
+        }
 
         formData.append('burn_on_read', burnOnRead.value ? '1' : '0');
 
         if (recipientEmail.value) {
-formData.append('recipient_email', recipientEmail.value);
-}
+            formData.append('recipient_email', recipientEmail.value);
+        }
 
         if (encryptionHint.value) {
-formData.append('encryption_hint', encryptionHint.value);
-}
+            formData.append('encryption_hint', encryptionHint.value);
+        }
         
         const fileMetadataArray: any[] = [];
 
@@ -221,10 +240,6 @@ formData.append('encryption_hint', encryptionHint.value);
         });
 
         let finalUrl = response.data.url;
-
-        if (!password.value) {
-            finalUrl += `#${encKey}`;
-        }
 
         createdSecretId.value = response.data.secret_id;
         createdLink.value = finalUrl;
@@ -303,6 +318,9 @@ function handleCreateAnother() {
     isCreated.value = false;
     createdLink.value = '';
     createdSecretId.value = '';
+    showPassword.value = false;
+    showCreatedKey.value = false;
+    copiedKey.value = false;
 }
 
 async function triggerFileInput() {
@@ -579,16 +597,36 @@ return '';
                             </div>
                         </div>
                         <div class="flex flex-col gap-2 md:col-span-6">
-                            <label class="font-label-sm text-label-sm uppercase text-vault-secondary select-none" for="password">Decryption Key</label>
-                            <input
-                                v-model="password"
-                                type="password"
-                                id="password"
-                                autocomplete="new-password"
-                                class="w-full bg-vault-surface-container-lowest border border-vault-outline-variant rounded py-3 px-4 font-body-md text-body-md text-vault-on-surface focus:outline-none focus:border-vault-primary focus:ring-1 focus:ring-vault-primary transition-all placeholder:text-vault-outline"
-                                placeholder="Enter decryption key"
-                                required
-                            />
+                            <div class="flex items-center justify-between">
+                                <label class="font-label-sm text-label-sm uppercase text-vault-secondary select-none" for="password">Decryption Key</label>
+                                <button
+                                    type="button"
+                                    @click="generateRandomPassword"
+                                    class="font-label-sm text-[0.6875rem] uppercase tracking-wider text-vault-primary hover:underline transition-colors font-semibold"
+                                >
+                                    Generate Key
+                                </button>
+                            </div>
+                            <div class="relative">
+                                <input
+                                    v-model="password"
+                                    :type="showPassword ? 'text' : 'password'"
+                                    id="password"
+                                    autocomplete="new-password"
+                                    class="w-full bg-vault-surface-container-lowest border border-vault-outline-variant rounded py-3 pl-4 pr-12 font-body-md text-body-md text-vault-on-surface focus:outline-none focus:border-vault-primary focus:ring-1 focus:ring-vault-primary transition-all placeholder:text-vault-outline"
+                                    placeholder="Enter decryption key"
+                                    required
+                                />
+                                <button
+                                    type="button"
+                                    @click="showPassword = !showPassword"
+                                    class="absolute right-3 top-1/2 -translate-y-1/2 text-vault-outline hover:text-vault-on-surface transition-colors flex items-center"
+                                >
+                                    <span class="material-symbols-outlined text-[1.25rem] select-none">
+                                        {{ showPassword ? 'visibility_off' : 'visibility' }}
+                                    </span>
+                                </button>
+                            </div>
                         </div>
                         <div class="flex flex-col gap-2 md:col-span-6">
                             <label class="font-label-sm text-label-sm uppercase text-vault-secondary select-none" for="identifier">Secret Identifier (Optional)</label>
@@ -739,24 +777,64 @@ return '';
                         <div class="flex-shrink-0 bg-vault-surface-container-low p-4 rounded-xl border border-vault-outline-variant flex items-center justify-center bg-white">
                             <img :src="`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(createdLink)}&bgcolor=ffffff&color=000000`" alt="Secret QR Code" class="rounded-md w-[7.5rem] h-[7.5rem] md:w-[9.375rem] md:h-[9.375rem]" />
                         </div>
-                        <div class="flex flex-col gap-2 w-full">
-                            <label class="font-label-sm text-label-sm uppercase text-vault-secondary select-none">Secret URL</label>
-                            <div class="flex flex-col sm:flex-row gap-2">
-                                <input
-                                    readonly
-                                    :value="createdLink"
-                                    class="w-full bg-vault-surface-container-low border border-vault-outline-variant rounded py-3 px-4 font-mono-custom text-sm text-vault-on-surface focus:outline-none"
-                                />
-                                <button
-                                    @click="handleCopy"
-                                    type="button"
-                                    class="bg-vault-primary text-vault-on-primary font-label-md text-label-md px-6 py-3 rounded hover:bg-vault-primary-container transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
-                                >
-                                    <span class="material-symbols-outlined text-[1.125rem]">{{ copied ? 'done' : 'content_copy' }}</span>
-                                    {{ copied ? 'Copied' : 'Copy' }}
-                                </button>
+                        <div class="flex flex-col gap-4 w-full">
+                            <div class="flex flex-col gap-2">
+                                <label class="font-label-sm text-label-sm uppercase text-vault-secondary select-none">Secret URL</label>
+                                <div class="flex flex-col sm:flex-row gap-2">
+                                    <input
+                                        readonly
+                                        :value="createdLink"
+                                        class="w-full bg-vault-surface-container-low border border-vault-outline-variant rounded py-3 px-4 font-mono-custom text-sm text-vault-on-surface focus:outline-none"
+                                    />
+                                    <button
+                                        @click="handleCopy"
+                                        type="button"
+                                        class="bg-vault-primary text-vault-on-primary font-label-md text-label-md px-6 py-3 rounded hover:bg-vault-primary-container transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
+                                    >
+                                        <span class="material-symbols-outlined text-[1.125rem]">{{ copied ? 'done' : 'content_copy' }}</span>
+                                        {{ copied ? 'Copied' : 'Copy Link' }}
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="flex flex-col gap-2 pt-2 border-t border-vault-outline-variant/30">
+                                <label class="font-label-sm text-label-sm uppercase text-vault-secondary select-none">Decryption Key</label>
+                                <div class="flex flex-col sm:flex-row gap-2">
+                                    <div class="relative w-full">
+                                        <input
+                                            readonly
+                                            :type="showCreatedKey ? 'text' : 'password'"
+                                            :value="password"
+                                            class="w-full bg-vault-surface-container-low border border-vault-outline-variant rounded py-3 pl-4 pr-12 font-mono-custom text-sm text-vault-on-surface focus:outline-none"
+                                        />
+                                        <button
+                                            type="button"
+                                            @click="showCreatedKey = !showCreatedKey"
+                                            class="absolute right-3 top-1/2 -translate-y-1/2 text-vault-outline hover:text-vault-on-surface transition-colors flex items-center"
+                                        >
+                                            <span class="material-symbols-outlined text-[1.25rem] select-none">
+                                                {{ showCreatedKey ? 'visibility_off' : 'visibility' }}
+                                            </span>
+                                        </button>
+                                    </div>
+                                    <button
+                                        @click="handleCopyKey"
+                                        type="button"
+                                        class="bg-vault-surface-container-low hover:bg-vault-surface-container-high border border-vault-outline-variant text-vault-on-surface font-label-md text-label-md px-6 py-3 rounded transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
+                                    >
+                                        <span class="material-symbols-outlined text-[1.125rem]">{{ copiedKey ? 'done' : 'content_copy' }}</span>
+                                        {{ copiedKey ? 'Copied' : 'Copy Key' }}
+                                    </button>
+                                </div>
                             </div>
                         </div>
+                    </div>
+
+                    <div class="bg-vault-surface-container-low p-4 rounded border border-vault-outline-variant/50 text-xs text-vault-on-surface-variant flex flex-col gap-2">
+                        <p class="font-medium text-vault-secondary">🔒 Zero-Knowledge Security Notice</p>
+                        <p>
+                            The decryption key is never stored on our servers. You must copy the URL and Key to share with your recipient.
+                        </p>
                     </div>
 
                     <div class="pt-6 border-t border-vault-outline-variant/50 flex flex-col md:flex-row justify-end gap-3 w-full">
