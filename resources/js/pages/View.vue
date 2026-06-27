@@ -27,6 +27,7 @@ const isDecrypting = ref(false);
 
 const decryptionKey = ref('');
 const decryptedPayload = ref<string | null>(null);
+const decryptedHint = ref<string | null>(null);
 const decryptError = ref('');
 const decryptedFiles = ref<Array<{
     name: string;
@@ -98,6 +99,14 @@ async function handleDecrypt() {
         }
 
         decryptedPayload.value = decrypted;
+        
+        if (fetchedSecretPayload.value.encryption_hint) {
+            try {
+                decryptedHint.value = await decryptText(fetchedSecretPayload.value.encryption_hint, decryptionKey.value.trim());
+            } catch (error) {
+                console.error('Failed to decrypt hint');
+            }
+        }
         
         decryptedFiles.value = [];
 
@@ -209,6 +218,7 @@ return;
 function handleClearRetrieved() {
     fetchedSecretPayload.value = null;
     decryptedPayload.value = null;
+    decryptedHint.value = null;
     isDecrypting.value = false;
     decryptedFiles.value = [];
     decryptionKey.value = '';
@@ -340,10 +350,6 @@ onMounted(() => {
                             <h2 class="font-headline-md text-headline-md font-bold">Secret Retrieved</h2>
                         </div>
 
-                        <div v-if="fetchedSecretPayload?.encryption_hint" class="bg-vault-surface-container-low border border-vault-outline-variant p-4 rounded text-vault-on-surface text-sm">
-                            <strong class="text-vault-secondary">Hint:</strong> {{ fetchedSecretPayload.encryption_hint }}
-                        </div>
-
                         <div v-if="!decryptedPayload" class="flex flex-col gap-4">
                             <p class="font-body-md text-body-md text-vault-on-surface-variant">
                                 This secret requires a decryption key.
@@ -383,6 +389,11 @@ onMounted(() => {
                                 </button>
                             </div>
                             <pre class="w-full bg-vault-surface-container-low border border-vault-outline-variant rounded p-4 font-mono-custom text-sm text-vault-on-surface overflow-x-auto break-all whitespace-pre-wrap select-text max-h-[25rem] overflow-y-auto">{{ decryptedPayload }}</pre>
+                            
+                            <div v-if="decryptedHint" class="bg-vault-primary/10 border border-vault-primary/30 p-4 rounded text-vault-on-surface text-sm animate-[fadeIn_0.5s_ease-out]">
+                                <strong class="text-vault-primary block mb-1">Additional Info</strong> 
+                                <span class="font-body-md">{{ decryptedHint }}</span>
+                            </div>
                             
                             <div v-if="decryptedFiles.length > 0" class="flex flex-col gap-2 mt-4">
                                 <label class="font-label-sm text-label-sm uppercase text-vault-secondary select-none">Attached Files</label>

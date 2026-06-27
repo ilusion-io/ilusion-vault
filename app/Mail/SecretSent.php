@@ -15,16 +15,14 @@ class SecretSent extends Mailable
     use Queueable, SerializesModels;
 
     public $secretUrl;
-    public $encryptionHint;
     public $senderName;
 
     /**
      * Create a new message instance.
      */
-    public function __construct($secretUrl, $encryptionHint, $senderName = null)
+    public function __construct($secretUrl, $senderName = null)
     {
         $this->secretUrl = $secretUrl;
-        $this->encryptionHint = $encryptionHint;
         $this->senderName = $senderName;
     }
 
@@ -47,7 +45,6 @@ class SecretSent extends Mailable
             markdown: 'emails.secret_sent',
             with: [
                 'secretUrl' => $this->secretUrl,
-                'encryptionHint' => $this->encryptionHint,
                 'senderName' => $this->senderName,
             ],
         );

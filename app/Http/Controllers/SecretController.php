@@ -121,7 +121,7 @@ class SecretController extends Controller
             foreach ($emails as $email) {
                 if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
                     Mail::to($email)->queue(
-                        new SecretSent($secretUrl, $request->encryption_hint, $user ? $user->name : null)
+                        new SecretSent($secretUrl, $user ? $user->name : null)
                     );
                 }
             }

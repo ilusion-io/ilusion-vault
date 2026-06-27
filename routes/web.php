@@ -75,6 +75,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->map(function ($secret) {
                 return [
                     'secret_id' => $secret->secret_id,
+                    'identifier' => $secret->identifier,
                     'url' => url('/secret/' . $secret->secret_id),
                     'expiry_date' => $secret->expiry_date->toIso8601String(),
                     'burn_on_read' => $secret->burn_on_read,

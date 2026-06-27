@@ -168,7 +168,7 @@ const deleteSecret = async (secretId: string) => {
                         <tbody class="divide-y divide-vault-outline-variant">
                             <tr v-for="secret in localSecrets" :key="secret.secret_id" class="hover:bg-vault-surface/20 transition-colors">
                                 <td class="py-4 px-6 font-mono text-sm text-vault-on-surface max-w-[9.375rem] truncate select-text" :title="secret.identifier || secret.secret_id">
-                                    {{ secret.identifier || secret.secret_id }}
+                                        {{ secret.identifier || secret.secret_id }}
                                 </td>
                                 <td class="py-4 px-6 text-sm text-vault-on-surface-variant">
                                     {{ formatDate(secret.created_at) }}
