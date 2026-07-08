@@ -10,10 +10,10 @@ Ilusion Vault lets you encrypt sensitive data directly in your browser and store
 
 ## Why Ilusion Vault?
 
-- ** Encrypted Vault** — Store passwords, API keys, `.env` files, and notes in a persistent encrypted vault accessible from any device.
-- ** Secure Sharing** — Generate self-destructing encrypted links to share credentials safely instead of pasting them in Slack, email, or chat.
-- ** Zero-Knowledge** — The server only stores ciphertext. Your encryption key travels via the URL hash (`#key`), which browsers never send to the server.
-- ** Open Source** — Fully transparent. Audit the code, self-host on your own server, or use our cloud-hosted version at [ilusion.io](https://ilusion.io).
+- Encrypted Vault — Store passwords, API keys, `.env` files, and notes in a persistent encrypted vault accessible from any device.
+- Secure Sharing — Generate self-destructing encrypted links to share credentials safely instead of pasting them in Slack, email, or chat.
+- Zero-Knowledge — The server only stores ciphertext. Your encryption key travels via the URL hash (`#key`), which browsers never send to the server.
+- Open Source — Fully transparent. Audit the code, self-host on your own server, or use our cloud-hosted version at [ilusion.io](https://ilusion.io).
 
 ## Features
 
