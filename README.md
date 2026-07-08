@@ -1,29 +1,29 @@
-# Ilusion Vault 🔐
+# Ilusion Vault 
 
 **Open-source, zero-knowledge encrypted data vault for storing and sharing passwords, API keys, and files securely.**
 
 Ilusion Vault lets you encrypt sensitive data directly in your browser and store it permanently — or share it via self-destructing links. The server never sees your plaintext. Access your vault from anywhere with just a URL and your encryption key.
 
-🌐 **Live:** [ilusion.io](https://ilusion.io)
+**Live:** [ilusion.io](https://ilusion.io)
 
 ---
 
 ## Why Ilusion Vault?
 
-- **🔐 Encrypted Vault** — Store passwords, API keys, `.env` files, and notes in a persistent encrypted vault accessible from any device.
-- **🔗 Secure Sharing** — Generate self-destructing encrypted links to share credentials safely instead of pasting them in Slack, email, or chat.
-- **🙈 Zero-Knowledge** — The server only stores ciphertext. Your encryption key travels via the URL hash (`#key`), which browsers never send to the server.
-- **🌍 Open Source** — Fully transparent. Audit the code, self-host on your own server, or use our cloud-hosted version at [ilusion.io](https://ilusion.io).
+- ** Encrypted Vault** — Store passwords, API keys, `.env` files, and notes in a persistent encrypted vault accessible from any device.
+- ** Secure Sharing** — Generate self-destructing encrypted links to share credentials safely instead of pasting them in Slack, email, or chat.
+- ** Zero-Knowledge** — The server only stores ciphertext. Your encryption key travels via the URL hash (`#key`), which browsers never send to the server.
+- ** Open Source** — Fully transparent. Audit the code, self-host on your own server, or use our cloud-hosted version at [ilusion.io](https://ilusion.io).
 
 ## Features
 
-- 🔒 **End-to-End Encryption** — AES-GCM (256-bit) client-side encryption via the Web Crypto API. Plaintext never leaves your browser.
-- 📁 **Encrypted File Uploads** — Attach multiple files. Each file is encrypted in-browser before upload to S3/Cloudflare R2.
-- ⏱ **Auto-Burn & Expiry** — Set data to self-destruct after one view, or expire after 1 Hour, 1 Day, 1 Week — or store permanently.
-- 📧 **Recipient Notifications** — Notify multiple recipients via email when you share encrypted data.
-- 💡 **Encryption Hints** — Add a hint to help the recipient remember the decryption key without exposing it.
-- 🔑 **Two-Factor Authentication** — Secure your account with 2FA and WebAuthn Passkeys.
-- 📱 **QR Code Sharing** — Every encrypted link comes with a QR code for easy mobile access.
+-  **End-to-End Encryption** — AES-GCM (256-bit) client-side encryption via the Web Crypto API. Plaintext never leaves your browser.
+- **Encrypted File Uploads** — Attach multiple files. Each file is encrypted in-browser before upload to S3/Cloudflare R2.
+-  **Auto-Burn & Expiry** — Set data to self-destruct after one view, or expire after 1 Hour, 1 Day, 1 Week — or store permanently.
+-  **Recipient Notifications** — Notify multiple recipients via email when you share encrypted data.
+-  **Encryption Hints** — Add a hint to help the recipient remember the decryption key without exposing it.
+-  **Two-Factor Authentication** — Secure your account with 2FA and WebAuthn Passkeys.
+-  **QR Code Sharing** — Every encrypted link comes with a QR code for easy mobile access.
 
 ## Tech Stack
 
